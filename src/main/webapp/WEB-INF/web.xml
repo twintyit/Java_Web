@@ -3,5 +3,16 @@
  "http://java.sun.com/dtd/web-app_2_3.dtd" >
 
 <web-app>
-  <display-name>Archetype Created Web Application</display-name>
+  <display-name>PV-221 Web Application</display-name>
+<!--region-->
+  <servlet>
+    <servlet-name>homeServlet</servlet-name>
+    <servlet-class>itstep.learning.servlets.HomeServlet</servlet-class>
+  </servlet>
+  
+  <servlet-mapping>
+    <servlet-name>homeServlet</servlet-name>
+    <url-pattern></url-pattern>
+  </servlet-mapping>
+<!--endregion-->
 </web-app>
