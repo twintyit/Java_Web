@@ -14,6 +14,12 @@ body{
     margin: 0 20px;
 }
 
+.logo-img{
+    max-height: 50px;
+    vertical-align: middle;
+    background-color: transparent;
+}
+
 .nav-addon{
     font-size: larger;
     margin-right: 20px;

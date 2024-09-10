@@ -18,7 +18,9 @@
   <header>
       <nav>
           <div class="nav-wrapper purple">
-              <a href="<%=contextPath%>/" class="site-logo left ">PV-221</a>
+              <a href="<%=contextPath%>/" class="site-logo left ">
+              <img src="<%=contextPath%>/img/Java_Logo.png" class="logo-img" alt="logo" />
+                  PV-221</a>
               <ul id="nav-mobile" class="left">
                   <li><a href="<%=contextPath%>/index">Index</a></li>
                   <li><a href="<%=contextPath%>/table">Table</a></li>
