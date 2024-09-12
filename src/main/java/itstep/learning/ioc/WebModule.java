@@ -16,5 +16,7 @@ public class WebModule extends ServletModule {
         serve("/signup"   ).with( SignUpServlet.class   );
         serve("/table"    ).with( TableServlet.class    );
         serve("/index"    ).with( IndexServlet.class    );
+        serve("/form_result"    ).with( SignUpServlet.class    );
+
     }
 }
