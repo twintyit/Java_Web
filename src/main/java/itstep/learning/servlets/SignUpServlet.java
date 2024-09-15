@@ -1,7 +1,10 @@
 package itstep.learning.servlets;
 
+import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import itstep.learning.models.form.UserSignupFormModel;
+import itstep.learning.rest.RestResponse;
 import itstep.learning.services.formparse.FormParseResult;
 import itstep.learning.services.formparse.FormParseService;
 import org.apache.commons.fileupload.FileItem;
@@ -11,6 +14,11 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Singleton
@@ -30,35 +38,59 @@ public class SignUpServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        SimpleDateFormat dateParser = new SimpleDateFormat("yyyy-MM-dd");
+        RestResponse restResponse = new RestResponse();
+        resp.setContentType("application/json");
+
         FormParseResult res = formParseService.parse(req);
-//        System.out.println( res.getFields().size() + " "+ res.getFiles().size() );
-//        System.out.println( res.getFields().toString() );
+        UserSignupFormModel model = new UserSignupFormModel();
+        Map<String, String> errors = new HashMap<>();
 
+        String userName = res.getFields().get("user-name");
+        if (userName == null || userName.isEmpty()) {
+            errors.put("user-name", "Введите имя.");
+        }
+        model.setName(userName);
 
-        // Выводим поля формы
-        Map<String, String> fields = res.getFields();
-        Map<String, FileItem> files = res.getFiles();
+        String email = res.getFields().get("user-email");
+        if (email == null || !email.matches("^[\\w-\\.]+@([\\w-]+\\.)+[\\w-]{2,4}$")) {
+            errors.put("user-email", "Введите корректный email.");
+        }
+        model.setEmail(email);
 
-        StringBuilder sbFields = new StringBuilder();
-        fields.forEach((name, value) -> {
-            sbFields.append(String.format("<p><strong>%s</strong>: %s</p>", name, value));
-        });
+        try {
+            String birthdate = res.getFields().get("user-birthdate");
+            if (birthdate == null || birthdate.isEmpty()) {
+                errors.put("user-birthdate", "Введите дату рождения.");
+            }
+            model.setBirthdate(dateParser.parse(birthdate));
+        } catch (ParseException ex) {
+            errors.put("user-birthdate", "Некорректная дата рождения.");
+        }
 
-        StringBuilder sbFile = new StringBuilder();
-        // Выводим информацию о загруженных файлах
-        files.forEach((name, fileItem) -> {
-            sbFile.append(String.format("<p><strong>%s</strong>: %s (size: %d bytes)</p>",
-                    name, fileItem.getName(), fileItem.getSize()));
-        });
+        // Валидация паролей
+        String password = res.getFields().get("user-password");
+        String repeatPassword = res.getFields().get("user-repeat");
+        if (password == null || password.isEmpty()) {
+            errors.put("user-password", "Введите пароль.");
+        }
+        if (repeatPassword == null || repeatPassword.isEmpty()) {
+            errors.put("user-repeat", "Повторите пароль.");
+        } else if (!password.equals(repeatPassword)) {
+            errors.put("user-repeat", "Пароли не совпадают.");
+        }
+        model.setPassword(password);
 
-        // Устанавливаем вывод в атрибут запроса
-        req.setAttribute("fieldsData", sbFields.toString());
-        req.setAttribute("fileData", sbFile.toString());
+        if (!errors.isEmpty()) {
+            restResponse.setStatus("Error");
+            restResponse.setData(errors);
+            resp.getWriter().print(new Gson().toJson(restResponse));
+            return;
+        }
 
-
-        // Перенаправляем на страницу с результатом
-        req.getRequestDispatcher("WEB-INF/views/form_result.jsp").forward(req, resp);
-
-
+        restResponse.setStatus("Ok");
+        restResponse.setData(model);
+        resp.getWriter().print(new Gson().toJson(restResponse));
     }
+
 }

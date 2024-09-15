@@ -1,8 +1,13 @@
 
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html; charset=UTF-8" %>
+<%
+  String contextPath = request.getContextPath();
+%>
 <h1>Register user</h1>
   <div class="row">
     <form class="card-panel grey lighten-5"
+          id="signup-form"
+          action="<%=contextPath%>/signup"
           enctype="multipart/form-data"
           method="post"
           accept-charset="UTF-8">
@@ -12,11 +17,13 @@
           <i class="material-icons prefix">badge</i>
           <input id="user-name" name="user-name" type="text" class="validate">
           <label for="user-name">First Name</label>
+          <span class="error-message" id="error-user-name"></span>  <!-- Error span -->
         </div>
         <div class="input-field col s6">
-          <i class="material-icons prefix">phone</i>
-          <input id="user-phone" name="user-phone" type="tel" class="validate">
-          <label for="user-phone">Telephone</label>
+          <i class="material-icons prefix">cake</i>
+          <input id="user-birthdate" name="user-birthdate" type="date" class="validate">
+          <label for="user-birthdate">Дата народження</label>
+          <span class="error-message" id="error-user-birthdate"></span> <!-- Error span -->
         </div>
       </div>
 
@@ -25,6 +32,7 @@
           <i class="material-icons prefix">alternate_email</i>
           <input id="user-email" name="user-email" type="text" class="validate">
           <label for="user-email">Email</label>
+          <span class="error-message" id="error-user-email"></span>  <!-- Error span -->
         </div>
         <div class="file-field input-field col s6">
           <div class="btn purple">
@@ -42,11 +50,13 @@
           <i class="material-icons prefix">lock</i>
           <input id="user-password" name="user-password" type="password" class="validate">
           <label for="user-password">Password</label>
+          <span class="error-message" id="error-user-password"></span>  <!-- Error span -->
         </div>
         <div class="input-field col s6">
           <i class="material-icons prefix">lock_open</i>
           <input id="user-repeat" name="user-repeat" type="password" class="validate">
           <label for="user-repeat">Repeat</label>
+          <span class="error-message" id="error-user-repeat"></span>  <!-- Error span -->
         </div>
       </div>
 

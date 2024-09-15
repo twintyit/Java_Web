@@ -3,6 +3,7 @@ package itstep.learning.servlets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import itstep.learning.dal.dao.UserDao;
 import itstep.learning.services.hash.HashService;
 
 import javax.servlet.ServletException;
@@ -17,14 +18,17 @@ public class HomeServlet extends HttpServlet {
     private final HashService md5HashService;
     private final HashService shaHashService;
     private final Connection connection;
+    private final UserDao userDao;
 
     @Inject
     public HomeServlet(@Named("digest") HashService md5HashService,
                        @Named("signature") HashService shaHashService,
-                       Connection connection) {
+                       Connection connection,
+                       UserDao userDao) {
         this.md5HashService = md5HashService;
         this.shaHashService = shaHashService;
         this.connection = connection;
+        this.userDao = userDao;
     }
 
     @Override
@@ -36,6 +40,9 @@ public class HomeServlet extends HttpServlet {
         } else {
             req.setAttribute( "control" ,"Control failed ");
         }
+
+        req.setAttribute("user",
+                userDao.installTables() ? "Tables OK" : "Tables Fail");
 
         req.setAttribute("connection",
                 connection == null ? "No" : " Ok ");
