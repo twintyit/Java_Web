@@ -3,8 +3,11 @@ package itstep.learning.servlets;
 import com.google.gson.Gson;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import itstep.learning.dal.dao.UserDao;
+import itstep.learning.dal.dto.User;
 import itstep.learning.models.form.UserSignupFormModel;
 import itstep.learning.rest.RestResponse;
+import itstep.learning.services.files.FileService;
 import itstep.learning.services.formparse.FormParseResult;
 import itstep.learning.services.formparse.FormParseService;
 import org.apache.commons.fileupload.FileItem;
@@ -16,18 +19,20 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Singleton
 public class SignUpServlet extends HttpServlet {
     private final FormParseService formParseService;
+    private final FileService fileService;
+    private final UserDao userDao;
+
 
     @Inject
-    public SignUpServlet( FormParseService formParseService ) {
+    public SignUpServlet(FormParseService formParseService, FileService fileService, UserDao userDao) {
         this.formParseService = formParseService;
+        this.fileService = fileService;
+        this.userDao = userDao;
     }
 
     @Override
@@ -38,11 +43,41 @@ public class SignUpServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        SimpleDateFormat dateParser = new SimpleDateFormat("yyyy-MM-dd");
+
         RestResponse restResponse = new RestResponse();
         resp.setContentType("application/json");
+        UserSignupFormModel model;
 
-        FormParseResult res = formParseService.parse(req);
+        Object result = getModelFromRequest( req );
+        if(result instanceof UserSignupFormModel) {
+            model = (UserSignupFormModel) result;
+        }
+        else {
+            restResponse.setStatus( "Error" );
+            restResponse.setData( result );
+            resp.getWriter().print(
+                    new Gson().toJson(restResponse) );
+            return;
+        }
+
+        User user = userDao.signup( model );
+        if (user == null ) {
+            restResponse.setStatus( "Error" );
+            restResponse.setData( "500 DB Error, details on server logs" );
+            resp.getWriter().print(
+                    new Gson().toJson(restResponse)
+            );
+            return;
+        }
+
+        restResponse.setStatus("Ok");
+        restResponse.setData(model);
+        resp.getWriter().print(new Gson().toJson(restResponse));
+    }
+
+    private Object getModelFromRequest(HttpServletRequest req) {
+        SimpleDateFormat dateParser = new SimpleDateFormat("yyyy-MM-dd");
+        FormParseResult res = formParseService.parse( req );
         UserSignupFormModel model = new UserSignupFormModel();
         Map<String, String> errors = new HashMap<>();
 
@@ -68,7 +103,6 @@ public class SignUpServlet extends HttpServlet {
             errors.put("user-birthdate", "Некорректная дата рождения.");
         }
 
-        // Валидация паролей
         String password = res.getFields().get("user-password");
         String repeatPassword = res.getFields().get("user-repeat");
         if (password == null || password.isEmpty()) {
@@ -81,16 +115,26 @@ public class SignUpServlet extends HttpServlet {
         }
         model.setPassword(password);
 
-        if (!errors.isEmpty()) {
-            restResponse.setStatus("Error");
-            restResponse.setData(errors);
-            resp.getWriter().print(new Gson().toJson(restResponse));
-            return;
+
+
+        String uploadedName = null;
+        FileItem avatar = res.getFiles().get("user-avatar");
+        if( avatar.getSize() > 0 ){
+            uploadedName = fileService.upload( avatar );
+            if(uploadedName == null){
+                errors.put("user-avatar", "Ошибка при сохранении файла.");
+            }else {
+                model.setAvatar( uploadedName );
+            }
         }
 
-        restResponse.setStatus("Ok");
-        restResponse.setData(model);
-        resp.getWriter().print(new Gson().toJson(restResponse));
+        if (!errors.isEmpty()) {
+            return errors;
+        }
+
+        System.out.println( uploadedName );
+
+        return model;
     }
 
 }

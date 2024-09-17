@@ -4,9 +4,8 @@ import com.google.inject.Singleton;
 import itstep.learning.dal.dto.User;
 import itstep.learning.models.form.UserSignupFormModel;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
+import java.util.Date;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,7 +25,38 @@ public class UserDao {
         return null;
     }
 
-    public User signup( UserSignupFormModel user ) {
+    public User signup( UserSignupFormModel model ) {
+        if(model == null) {
+            return null;
+        }
+        User user = new User();
+        user.setName(model.getName());
+        user.setEmail(model.getEmail());
+        user.setAvatar(model.getAvatar());
+        user.setBirthdate(model.getBirthdate());
+        user.setSignupDt(new Date());
+        user.setId(UUID.randomUUID());
+
+        String sql = "INSERT INTO users(id,name,email,avatar,birthdate,signup_dt)"+
+                "VALUES(?,?,?,?,?,?)";
+
+        try (PreparedStatement prep = connection.prepareStatement(sql)) {
+            prep.setString(1, user.getId().toString() );
+            prep.setString(2, user.getName() );
+            prep.setString(3, user.getEmail() );
+            prep.setString(4, user.getAvatar() );
+            prep.setTimestamp(5, model.getBirthdate() == null ? null :
+                                    new Timestamp(model.getBirthdate().getTime()));
+            prep.setTimestamp(6, new Timestamp(user.getSignupDt().getTime() ) );
+
+            prep.executeUpdate();
+
+        }
+        catch (SQLException ex)
+        {
+            logger.log( Level.WARNING, ex.getMessage() + " -- " + sql, ex );
+            return null;
+        }
         return null;
     }
 
