@@ -27,6 +27,7 @@
                   <li><a href="<%=contextPath%>/servlets">Servlets</a></li>
               </ul>
               <a class="nav-addon right" href="<%=contextPath%>/signup"><i class="material-icons">person_add</i></a>
+              <a class="nav-addon right modal-trigger" href="#auth-modal"><i class="material-icons">login</i></a>
           </div>
       </nav>
   </header>
@@ -58,6 +59,35 @@
           </div>
       </div>
   </footer>
+
+  <!-- Modal Structure -->
+  <div id="auth-modal" class="modal">
+      <div class="modal-content">
+          <h4>Аунтефикация</h4>
+          <form id="modal-auth-form" action="<%=contextPath%>/signup">
+              <div class="row">
+                  <div class="input-field col s6">
+                      <i class="material-icons prefix">alternate_email</i>
+                      <input id="auth-user-email" name="user-email" type="text" class="validate">
+                      <label for="auth-user-email">Email</label>
+                      <span class="error-message red-text" id="error-user-email"></span>  <!-- Error span -->
+                  </div>
+                  <div class="input-field col s6">
+                      <i class="material-icons prefix">lock</i>
+                      <input id="auth-user-password" name="user-password" type="password" class="validate">
+                      <label for="auth-user-password">Password</label>
+                      <span class="error-message red-text" id="error-user-password"></span>  <!-- Error span -->
+                  </div>
+              </div>
+          </form>
+      </div>
+      <div class="modal-footer">
+          <button class="modal-close waves-effect waves-green btn-flat">Закрыть</button>
+          <button form="modal-auth-form" type="submit" class=" waves-effect waves-green btn-flat">Вход</button>
+
+      </div>
+
+  </div>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   <script src="<%=contextPath%>/js/site.js"></script>

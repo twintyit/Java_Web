@@ -15,7 +15,7 @@ import java.util.*;
 @Singleton
 public class LocalFileService implements FileService {
     private final String uploadPath;
-    private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList("jpg", "jpeg", "png", "gif");
+    private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList(".jpg", ".jpeg", ".png", ".gif");
 
 
     @Inject

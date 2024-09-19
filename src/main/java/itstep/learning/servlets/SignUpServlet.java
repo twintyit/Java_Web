@@ -1,6 +1,7 @@
 package itstep.learning.servlets;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import itstep.learning.dal.dao.UserDao;
@@ -13,6 +14,8 @@ import itstep.learning.services.formparse.FormParseService;
 import org.apache.commons.fileupload.FileItem;
 
 import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -20,25 +23,72 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.logging.Logger;
 
 @Singleton
 public class SignUpServlet extends HttpServlet {
     private final FormParseService formParseService;
     private final FileService fileService;
     private final UserDao userDao;
-
+    private final Logger logger;
 
     @Inject
-    public SignUpServlet(FormParseService formParseService, FileService fileService, UserDao userDao) {
+    public SignUpServlet(FormParseService formParseService, FileService fileService, UserDao userDao, Logger logger) {
         this.formParseService = formParseService;
         this.fileService = fileService;
         this.userDao = userDao;
+        this.logger = logger;
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         req.setAttribute( "page", "signup" );
         req.getRequestDispatcher("WEB-INF/views/_layout.jsp").forward(req, resp);
+    }
+
+    protected void doPatch(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+
+        String userLogin = req.getParameter("user-email");
+        String userPassword = req.getParameter("user-password");
+        logger.info("userLogin: " + userLogin);
+        RestResponse restResponse = new RestResponse();
+        resp.setContentType("application/json");
+        Gson gson = new GsonBuilder().serializeNulls().create();
+
+        Map<String, String> fieldErrors = new HashMap<>();
+
+        if(userLogin == null || userLogin.isEmpty()) {
+            fieldErrors.put("user-email", "Введите корректный email.");
+        }
+        if(userPassword == null || userPassword.isEmpty()) {
+            fieldErrors.put("user-password", "Введите пароль.");
+        }
+
+        if (!fieldErrors.isEmpty()) {
+            restResponse.setStatus("Error");
+            restResponse.setData(fieldErrors);  // Возвращаем ошибки
+            resp.getWriter().print(gson.toJson(restResponse));
+            return;
+        }
+        User user = userDao.authenticate(userLogin, userPassword);
+        if (user != null) {
+            restResponse.setStatus("Ok");
+            restResponse.setData(user);
+            resp.getWriter().print(gson.toJson(restResponse));
+        } else {
+            fieldErrors.put("user-auth", "Неправильный логин или пароль.");
+            restResponse.setStatus("Error");
+            restResponse.setData(fieldErrors);
+            resp.getWriter().print(gson.toJson(restResponse));
+        }
+    }
+
+    @Override
+    protected void service( HttpServletRequest req, HttpServletResponse resp ) throws ServletException, IOException {
+        switch ( req.getMethod().toUpperCase() ) {
+            case "PATCH": doPatch( req, resp ); break;
+            default: super.service(req, resp);
+        }
     }
 
     @Override
@@ -114,8 +164,6 @@ public class SignUpServlet extends HttpServlet {
             errors.put("user-repeat", "Пароли не совпадают.");
         }
         model.setPassword(password);
-
-
 
         String uploadedName = null;
         FileItem avatar = res.getFiles().get("user-avatar");
