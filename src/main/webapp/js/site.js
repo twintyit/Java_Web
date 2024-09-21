@@ -38,7 +38,11 @@ document.addEventListener("submit", e => {
                     }
                 }
             } else {
-                console.log("Authorization successful");
+                if( data.status === "Ok") {
+                    window.location.reload();
+                } else {
+                    console.log(data);
+                }
             }
         });
     }
@@ -79,3 +83,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 });
 
+document.getElementById('logout-link').addEventListener('click', function(e) {
+    e.preventDefault();
+
+    Swal.fire({
+        title: 'Are you sure you want to exit?',
+        text: "You cannot undo this action!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Yes, get out!',
+        cancelButtonText: 'Cancel'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            window.location.href = '?logout=logout';
+        }
+    });
+});

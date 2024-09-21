@@ -1,8 +1,11 @@
-<%@ page contentType="text/html;charset=UTF-8"%>
+<%@ page contentType="text/html; charset=UTF-8"%>
 
 <%
       String pageName = (String) request.getAttribute("page");
       String contextPath = request.getContextPath();
+      boolean isAuthenticated = request.getAttribute("Claim.Sid") != null;
+      String avatar = (String) request.getAttribute("Claim.Avatar");
+     String userName = (String) request.getAttribute("Claim.Name");
 %>
 <html>
 <head>
@@ -12,6 +15,7 @@
     <!-- Compiled and minified CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" />
     <link rel="stylesheet" href="<%=contextPath%>/css/site.css" />
+    <meta charset="UTF-8">
 </head>
 <body>
 
@@ -19,15 +23,24 @@
       <nav>
           <div class="nav-wrapper purple">
               <a href="<%=contextPath%>/" class="site-logo left ">
-              <img src="<%=contextPath%>/img/Java_Logo.png" class="logo-img" alt="logo" />
+              <img src="<%=contextPath%>/img/Java_Logo.jpeg" class="logo-img" alt="logo" />
                   PV-221</a>
               <ul id="nav-mobile" class="left">
                   <li><a href="<%=contextPath%>/index">Index</a></li>
                   <li><a href="<%=contextPath%>/table">Table</a></li>
                   <li><a href="<%=contextPath%>/servlets">Servlets</a></li>
               </ul>
-              <a class="nav-addon right" href="<%=contextPath%>/signup"><i class="material-icons">person_add</i></a>
-              <a class="nav-addon right modal-trigger" href="#auth-modal"><i class="material-icons">login</i></a>
+              <% if(isAuthenticated){ %>
+              <img src="<%=contextPath%>/file/<%=avatar%>"
+                   alt="avatar"
+                   title="<%=userName%>"
+                   class="nav-addon right nav-avatar"
+              />
+              <a class="nav-addon right" style="cursor: pointer" id="logout-link"><i class="material-icons">logout</i></a>
+              <%} else {%>
+                  <a class="nav-addon right" href="<%=contextPath%>/signup"><i class="material-icons">person_add</i></a>
+                  <a class="nav-addon right modal-trigger" href="#auth-modal"><i class="material-icons">login</i></a>
+              <%}%>
           </div>
       </nav>
   </header>
@@ -82,8 +95,8 @@
           </form>
       </div>
       <div class="modal-footer">
-          <button class="modal-close waves-effect waves-green btn-flat">Закрыть</button>
-          <button form="modal-auth-form" type="submit" class=" waves-effect waves-green btn-flat">Вход</button>
+          <button class="modal-close waves-effect waves-green btn-flat red white-text">Закрыть</button>
+          <button form="modal-auth-form" type="submit" class="waves-effect waves-green btn-flat green white-text">Вход</button>
 
       </div>
 
@@ -91,5 +104,6 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
   <script src="<%=contextPath%>/js/site.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </body>
 </html>

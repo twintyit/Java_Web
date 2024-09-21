@@ -6,10 +6,8 @@ import itstep.learning.services.random.FileNameGenerator;
 import itstep.learning.services.stream.StringReader;
 import org.apache.commons.fileupload.FileItem;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
+import java.nio.file.Files;
 import java.util.*;
 
 @Singleton
@@ -67,7 +65,11 @@ public class LocalFileService implements FileService {
     }
 
     @Override
-    public OutputStream download(String filename) {
+    public InputStream download(String filename) throws IOException {
+        File file = new File( this.uploadPath, filename );
+        if(file.isFile() && file.canRead()) {
+            return Files.newInputStream( file.toPath() );
+        }
         return null;
     }
 }
