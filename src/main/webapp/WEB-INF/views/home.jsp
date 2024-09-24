@@ -17,7 +17,4 @@
     cupiditate molestias officia quam tenetur.
 </p>
 <h2><%= request.getAttribute("user") %></h2>
-<h2><%= request.getAttribute("connection") %></h2>
 <h2><%= request.getAttribute("control") %></h2>
-<h2><%= request.getAttribute("MD5") %></h2>
-<h2><%= request.getAttribute("SHA") %></h2>

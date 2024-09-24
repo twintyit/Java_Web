@@ -3,6 +3,7 @@ package itstep.learning.servlets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import itstep.learning.dal.dao.TokenDao;
 import itstep.learning.dal.dao.UserDao;
 import itstep.learning.services.hash.HashService;
 
@@ -15,20 +16,13 @@ import java.sql.Connection;
 
 @Singleton
 public class HomeServlet extends HttpServlet {
-    private final HashService md5HashService;
-    private final HashService shaHashService;
-    private final Connection connection;
     private final UserDao userDao;
+    private final TokenDao tokenDao;
 
     @Inject
-    public HomeServlet(@Named("digest") HashService md5HashService,
-                       @Named("signature") HashService shaHashService,
-                       Connection connection,
-                       UserDao userDao) {
-        this.md5HashService = md5HashService;
-        this.shaHashService = shaHashService;
-        this.connection = connection;
+    public HomeServlet(UserDao userDao, TokenDao tokenDao) {
         this.userDao = userDao;
+        this.tokenDao = tokenDao;
     }
 
     @Override
@@ -42,18 +36,10 @@ public class HomeServlet extends HttpServlet {
         }
 
         req.setAttribute("user",
-                userDao.installTables() ? "Tables OK" : "Tables Fail");
+                userDao.installTables() && tokenDao.installTables()
+                        ? "Tables OK" : "Tables Fail");
 
-        req.setAttribute("connection",
-                connection == null ? "No" : " Ok ");
 
-        req.setAttribute( "MD5",
-                "MD5: " + md5HashService.digest("123") + "<br/>" +
-                this.hashCode() );
-
-        req.setAttribute( "SHA",
-                "SHA: " + shaHashService.digest("123") + "<br/>"
-                );
 
         req.setAttribute( "page", "home" );
         req.getRequestDispatcher("WEB-INF/views/_layout.jsp").forward(req, resp);
