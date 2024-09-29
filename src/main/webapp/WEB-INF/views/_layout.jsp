@@ -7,6 +7,7 @@
       String avatar = (String) request.getAttribute("Claim.Avatar");
      String userName = (String) request.getAttribute("Claim.Name");
 %>
+
 <html>
 <head>
     <title>PV-221</title>
@@ -29,18 +30,23 @@
                   <li><a href="<%=contextPath%>/index">Index</a></li>
                   <li><a href="<%=contextPath%>/table">Table</a></li>
                   <li><a href="<%=contextPath%>/servlets">Servlets</a></li>
+                  <li><a href="<%=contextPath%>/spa">SPA</a></li>
               </ul>
-              <% if(isAuthenticated){ %>
-              <img src="<%=contextPath%>/file/<%=avatar%>"
-                   alt="avatar"
-                   title="<%=userName%>"
-                   class="nav-addon right nav-avatar"
-              />
-              <a class="nav-addon right" style="cursor: pointer" id="logout-link"><i class="material-icons">logout</i></a>
-              <%} else {%>
-                  <a class="nav-addon right" href="<%=contextPath%>/signup"><i class="material-icons">person_add</i></a>
-                  <a class="nav-addon right modal-trigger" href="#auth-modal"><i class="material-icons">login</i></a>
-              <%}%>
+
+              <div id="react-auth-container" >
+              </div>
+
+<%--              <% if(isAuthenticated){ %>--%>
+<%--              <img src="<%=contextPath%>/file/<%=avatar%>"--%>
+<%--                   alt="avatar"--%>
+<%--                   title="<%=userName%>"--%>
+<%--                   class="nav-addon right nav-avatar"--%>
+<%--              />--%>
+<%--              <a class="nav-addon right" style="cursor: pointer" id="logout-link"><i class="material-icons">logout</i></a>--%>
+<%--              <%} else {%>--%>
+<%--                  <a class="nav-addon right" href="<%=contextPath%>/signup"><i class="material-icons">person_add</i></a>--%>
+<%--                  <a class="nav-addon right modal-trigger" href="#auth-modal"><i class="material-icons">login</i></a>--%>
+<%--              <%}%>--%>
           </div>
       </nav>
   </header>
@@ -102,8 +108,14 @@
 
   </div>
 
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-  <script src="<%=contextPath%>/js/site.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <script src="<%=contextPath%>/js/site.js"></script>
+  <script src="js/authNav.js"  type="text/babel"></script>
+  <script src="js/spa.js" type="text/babel"></script>
 </body>
 </html>

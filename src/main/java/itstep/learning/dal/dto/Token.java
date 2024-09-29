@@ -18,7 +18,7 @@ public class Token {
         setTokenId( UUID.fromString(res.getString("token_id") ) );
         setUserId( UUID.fromString(res.getString("user_id")));
         setExp( new Date(res.getTimestamp("exp").getTime()));
-        setExp( new Date(res.getTimestamp("iat").getTime()));
+        setIat( new Date(res.getTimestamp("iat").getTime()));
     }
 
     public UUID getTokenId() {
