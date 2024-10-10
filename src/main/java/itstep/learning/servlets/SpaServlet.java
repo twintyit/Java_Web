@@ -8,6 +8,7 @@ import itstep.learning.dal.dao.TokenDao;
 import itstep.learning.dal.dto.Token;
 import itstep.learning.dal.dto.User;
 import itstep.learning.rest.RestResponse;
+import itstep.learning.rest.RestServlet;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -19,7 +20,7 @@ import java.util.UUID;
 import java.util.logging.Logger;
 
 @Singleton
-public class SpaServlet extends HttpServlet {
+public class SpaServlet extends RestServlet {
     private final Logger logger;
     private final TokenDao tokenDao;
 
@@ -27,7 +28,7 @@ public class SpaServlet extends HttpServlet {
     public SpaServlet(Logger logger, TokenDao tokenDao) {
         this.logger = logger;
         this.tokenDao = tokenDao;
-    }
+   }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -37,14 +38,13 @@ public class SpaServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        logger.warning("ok");
         String authHeader = req.getHeader("Authorization");
         if(authHeader == null ) {
-            sendRestError(resp, "Missing Authorization header" );
+            super.sendRest(401, "Missing Authorization header" );
             return;
         }
         if(!authHeader.startsWith("Bearer ")) {
-            sendRestError(resp, "Bearer Authorization scheme only" );
+            super.sendRest(401, "Bearer Authorization scheme only" );
             return;
         }
         String token = authHeader.substring(7);
@@ -54,41 +54,23 @@ public class SpaServlet extends HttpServlet {
 
         }catch (IllegalArgumentException e) {
             logger.warning(e.getMessage());
-            sendRestError(resp, "Illegal credential format" );
+            super.sendRest(400, "Illegal credential format" );
             return;
         }
 
         try {
             User user = tokenDao.getUserByTokenId(tokenId);
-            sendRestResponse(resp, user);
+            super.sendRest(200, user);
         }catch (Exception e) {
-            sendRestError(resp, e.getMessage() );
+            super.sendRest(400, e.getMessage() );
         }
     }
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String contextPath = req.getContextPath();
-        sendRestResponse(resp, contextPath);
+        super.sendRest(200, contextPath);
     }
 
-    private void sendRestError(  HttpServletResponse resp, String message ) throws IOException {
-        RestResponse restResponse = new RestResponse();
-        restResponse.setStatus("Error");
-        restResponse.setData( message);
-        SendRest(resp, restResponse);
-    }
 
-    private void sendRestResponse(HttpServletResponse resp, Object data) throws IOException {
-        RestResponse restResponse = new RestResponse();
-        restResponse.setStatus("Ok");
-        restResponse.setData( data );
-        SendRest(resp, restResponse);
-    }
-
-    private void SendRest(HttpServletResponse resp, RestResponse restResponse) throws IOException {
-        resp.setContentType("application/json");
-        Gson gson = new GsonBuilder().serializeNulls().create();
-        resp.getWriter().print(gson.toJson(restResponse));
-    }
 }

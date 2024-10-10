@@ -2,6 +2,7 @@ package itstep.learning.dal.dao;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import itstep.learning.dal.dto.Role;
 import itstep.learning.dal.dto.User;
 import itstep.learning.models.form.UserSignupFormModel;
 import itstep.learning.services.hash.HashService;
@@ -20,10 +21,34 @@ public class UserDao {
     private final HashService hashService;
 
     @Inject
-    public UserDao( Connection connection, Logger logger,@Named("digest") HashService hashService ) {
+    public UserDao( Connection connection, Logger logger, @Named("digest") HashService hashService ) {
         this.connection = connection;
         this.logger = logger;
         this.hashService = hashService;
+    }
+
+    public Role getRoleById( UUID id ) {
+        String sql = String.format(
+                Locale.ROOT,
+                "select r.role_id, r.name\n" +
+                        "from roles r,\n" +
+                        "     (select *\n" +
+                        "      from users_security\n" +
+                        "      where user_id = '%s') us\n" +
+                        "where r.role_id = us.role_id;",
+                id.toString()
+        );
+
+        try ( Statement statement = connection.createStatement() ){
+            ResultSet resultSet = statement.executeQuery( sql );
+            if( resultSet.next() ) {
+                return new Role( resultSet );
+            }
+        }
+        catch (SQLException ex){
+            logger.log( Level.WARNING, ex.getMessage() + " -- " + sql, ex );
+        }
+        return null;
     }
 
     public User getUserById( UUID id ) {

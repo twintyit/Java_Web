@@ -41,13 +41,19 @@ function AuthNav () {
 
 
     return <React.Fragment>
-        {isAuth && userData &&
+        {isAuth && userData ? (
             <div className="nav-user-info right">
                 <p className="nav-addon">Hello, {userData.name}</p>
               <img src={`${contextPath}/file/${userData.avatar}`}
                   className="nav-addon nav-avatar"/>
             </div>
-         }
+        ) : (
+            <div>
+                <a className="nav-addon right" href={`${contextPath}/signup`}><i
+                    className="material-icons">person_add</i></a>
+            </div>
+        )
+        }
     </React.Fragment>
 }
 

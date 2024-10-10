@@ -9,6 +9,8 @@ import itstep.learning.services.formparse.MixedFormParseService;
 import itstep.learning.services.hash.HashService;
 import itstep.learning.services.hash.Md5HashService;
 import itstep.learning.services.hash.ShaHashService;
+import itstep.learning.services.response.RestService;
+import itstep.learning.services.response.SendRestService;
 import itstep.learning.services.stream.StringReader;
 
 public class ServicesModule  extends AbstractModule {
@@ -31,5 +33,6 @@ public class ServicesModule  extends AbstractModule {
         bind(FormParseService.class).to(MixedFormParseService.class);
         bind(StringReader.class).toInstance( stringReader);
         bind(FileService.class).to( LocalFileService.class );
+        bind(RestService.class).to(SendRestService.class);
     }
 }

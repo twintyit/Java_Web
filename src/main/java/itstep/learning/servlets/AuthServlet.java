@@ -6,9 +6,12 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import itstep.learning.dal.dao.TokenDao;
 import itstep.learning.dal.dao.UserDao;
+import itstep.learning.dal.dto.Role;
 import itstep.learning.dal.dto.Token;
 import itstep.learning.dal.dto.User;
+import itstep.learning.models.rest.UserAuthResponse;
 import itstep.learning.rest.RestResponse;
+import itstep.learning.rest.RestServlet;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -19,7 +22,7 @@ import java.util.Base64;
 import java.util.logging.Logger;
 
 @Singleton
-public class AuthServlet  extends HttpServlet {
+public class AuthServlet  extends RestServlet {
     private final Logger logger;
     private final UserDao userDao;
     private final TokenDao tokenDao;
@@ -35,11 +38,11 @@ public class AuthServlet  extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         String authHeader = req.getHeader("Authorization");
         if(authHeader == null ) {
-           sendRestError(resp, "Missing Authorization header" );
+            super.sendRest(401, "Missing Authorization header" );
             return;
         }
         if(!authHeader.startsWith("Basic ")) {
-            sendRestError(resp, "Basic Authorization scheme only" );
+            super.sendRest(400, "Basic Authorization scheme only" );
             return;
         }
         String credentials64 = authHeader.substring(6);
@@ -48,37 +51,20 @@ public class AuthServlet  extends HttpServlet {
            credentials= new String( Base64.getDecoder().decode(credentials64) );
         }catch (IllegalArgumentException e) {
             logger.warning(e.getMessage());
-            sendRestError(resp, "Illegal credential format" );
+            super.sendRest(400, "Illegal credential format" );
             return;
         }
         String[] parts = credentials.split(":", 2);
         User user = userDao.authenticate(parts[0], parts[1]);
         if(user == null) {
-            sendRestError(resp, "Invalid username or password" );
+            super.sendRest(422, "Invalid username or password" );
             return;
         }
         Token token = tokenDao.create(user);
-        sendRestResponse(resp, token );
-    }
+        Role role = userDao.getRoleById(user.getId());
 
-    private void sendRestError(  HttpServletResponse resp, String message ) throws IOException {
-        RestResponse restResponse = new RestResponse();
-        restResponse.setStatus("Error");
-        restResponse.setData( message);
-        SendRest(resp, restResponse);
-    }
-
-    private void sendRestResponse(HttpServletResponse resp, Object data) throws IOException {
-        RestResponse restResponse = new RestResponse();
-        restResponse.setStatus("Ok");
-        restResponse.setData( data );
-        SendRest(resp, restResponse);
-    }
-
-    private void SendRest(HttpServletResponse resp, RestResponse restResponse) throws IOException {
-        resp.setContentType("application/json");
-        Gson gson = new GsonBuilder().serializeNulls().create();
-        resp.getWriter().print(gson.toJson(restResponse));
+        UserAuthResponse response = new UserAuthResponse(token, role);
+        super.sendRest(200, response);
     }
 
 }

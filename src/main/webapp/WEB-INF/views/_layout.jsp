@@ -31,6 +31,7 @@
                   <li><a href="<%=contextPath%>/table">Table</a></li>
                   <li><a href="<%=contextPath%>/servlets">Servlets</a></li>
                   <li><a href="<%=contextPath%>/spa">SPA</a></li>
+                  <li><a href="<%=contextPath%>/role">Role</a></li>
               </ul>
 
               <div id="react-auth-container" >
@@ -105,7 +106,6 @@
           <button form="modal-auth-form" type="submit" class="waves-effect waves-green btn-flat green white-text">Вход</button>
 
       </div>
-
   </div>
 
   <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
@@ -116,6 +116,7 @@
 
   <script src="<%=contextPath%>/js/site.js"></script>
   <script src="js/authNav.js"  type="text/babel"></script>
+  <script src="js/addRole.js"  type="text/babel"></script>
   <script src="js/spa.js" type="text/babel"></script>
 </body>
 </html>

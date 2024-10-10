@@ -8,6 +8,7 @@ import itstep.learning.dal.dao.UserDao;
 import itstep.learning.dal.dto.User;
 import itstep.learning.models.form.UserSignupFormModel;
 import itstep.learning.rest.RestResponse;
+import itstep.learning.rest.RestServlet;
 import itstep.learning.services.files.FileService;
 import itstep.learning.services.formparse.FormParseResult;
 import itstep.learning.services.formparse.FormParseService;
@@ -27,7 +28,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 @Singleton
-public class SignUpServlet extends HttpServlet {
+public class SignUpServlet extends RestServlet {
     private final FormParseService formParseService;
     private final FileService fileService;
     private final UserDao userDao;
@@ -39,6 +40,7 @@ public class SignUpServlet extends HttpServlet {
         this.fileService = fileService;
         this.userDao = userDao;
         this.logger = logger;
+
     }
 
     @Override
@@ -66,7 +68,7 @@ public class SignUpServlet extends HttpServlet {
         }
 
         if (!fieldErrors.isEmpty()) {
-            restResponse.setStatus("Error");
+            super.sendRest( 401, "Error");
             restResponse.setData(fieldErrors);  // Возвращаем ошибки
             resp.getWriter().print(gson.toJson(restResponse));
             return;
@@ -75,14 +77,10 @@ public class SignUpServlet extends HttpServlet {
         if (user != null) {
             HttpSession session = req.getSession();
             session.setAttribute("userId", user.getId() );
-            restResponse.setStatus("Ok");
-            restResponse.setData( user );
-            resp.getWriter().print( gson.toJson(restResponse) );
+            super.sendRest(200, user);
         } else {
             fieldErrors.put("user-auth", "Неправильный логин или пароль.");
-            restResponse.setStatus("Error");
-            restResponse.setData(fieldErrors);
-            resp.getWriter().print(gson.toJson(restResponse));
+            super.sendRest( 401, "Неправильный логин или пароль.");
         }
     }
 
@@ -106,26 +104,17 @@ public class SignUpServlet extends HttpServlet {
             model = (UserSignupFormModel) result;
         }
         else {
-            restResponse.setStatus( "Error" );
-            restResponse.setData( result );
-            resp.getWriter().print(
-                    new Gson().toJson(restResponse) );
+            super.sendRest( 400, "Error");
             return;
         }
 
         User user = userDao.signup( model );
         if (user == null ) {
-            restResponse.setStatus( "Error" );
-            restResponse.setData( "500 DB Error, details on server logs" );
-            resp.getWriter().print(
-                    new Gson().toJson(restResponse)
-            );
+            super.sendRest( 500,"500 DB Error, details on server logs");
             return;
         }
 
-        restResponse.setStatus("Ok");
-        restResponse.setData(model);
-        resp.getWriter().print(new Gson().toJson(restResponse));
+        super.sendRest(200, user );
     }
 
     private Object getModelFromRequest(HttpServletRequest req) {

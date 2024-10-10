@@ -92,4 +92,5 @@ public class User {
     public void setDeleteDt(Date deleteDt) {
         this.deleteDt = deleteDt;
     }
+
 }

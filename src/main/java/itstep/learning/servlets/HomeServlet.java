@@ -3,8 +3,11 @@ package itstep.learning.servlets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
+import itstep.learning.dal.dao.RoleDao;
 import itstep.learning.dal.dao.TokenDao;
 import itstep.learning.dal.dao.UserDao;
+import itstep.learning.dal.dao.shop.CategoryDao;
+import itstep.learning.dal.dao.shop.ProductDao;
 import itstep.learning.services.hash.HashService;
 
 import javax.servlet.ServletException;
@@ -18,11 +21,17 @@ import java.sql.Connection;
 public class HomeServlet extends HttpServlet {
     private final UserDao userDao;
     private final TokenDao tokenDao;
+    private final CategoryDao categoryDao;
+    private final RoleDao roleDao;
+    private final ProductDao productDao;
 
     @Inject
-    public HomeServlet(UserDao userDao, TokenDao tokenDao) {
+    public HomeServlet(UserDao userDao, TokenDao tokenDao, CategoryDao categoryDao, RoleDao roleDao, ProductDao productDao) {
         this.userDao = userDao;
         this.tokenDao = tokenDao;
+        this.categoryDao = categoryDao;
+        this.roleDao = roleDao;
+        this.productDao = productDao;
     }
 
     @Override
@@ -36,7 +45,11 @@ public class HomeServlet extends HttpServlet {
         }
 
         req.setAttribute("user",
-                userDao.installTables() && tokenDao.installTables()
+                userDao.installTables() &&
+                        tokenDao.installTables() &&
+                        categoryDao.installTables() &&
+                        roleDao.installTables() &&
+                        productDao.installTables()
                         ? "Tables OK" : "Tables Fail");
 
 

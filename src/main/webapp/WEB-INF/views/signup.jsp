@@ -17,13 +17,13 @@
           <i class="material-icons prefix">badge</i>
           <input id="user-name" name="user-name" type="text" class="validate">
           <label for="user-name">First Name</label>
-          <span class="error-message red-text" id="error-user-name"></span>  <!-- Error span -->
+          <span class="error-message red-text" id="error-user-name"></span>
         </div>
         <div class="input-field col s6">
           <i class="material-icons prefix">cake</i>
           <input id="user-birthdate" name="user-birthdate" type="date" class="validate">
           <label for="user-birthdate">Дата народження</label>
-          <span class="error-message red-text" id="error-user-birthdate"></span> <!-- Error span -->
+          <span class="error-message red-text" id="error-user-birthdate"></span>
         </div>
       </div>
 
@@ -32,7 +32,7 @@
           <i class="material-icons prefix">alternate_email</i>
           <input id="user-email" name="user-email" type="text" class="validate">
           <label for="user-email">Email</label>
-          <span class="error-message red-text" id="error-user-email"></span>  <!-- Error span -->
+          <span class="error-message red-text" id="error-user-email"></span>
         </div>
         <div class="file-field input-field col s6">
           <div class="btn purple">
@@ -51,13 +51,13 @@
           <i class="material-icons prefix">lock</i>
           <input id="user-password" name="user-password" type="password" class="validate">
           <label for="user-password">Password</label>
-          <span class="error-message red-text" id="error-user-password"></span>  <!-- Error span -->
+          <span class="error-message red-text" id="error-user-password"></span>
         </div>
         <div class="input-field col s6">
           <i class="material-icons prefix">lock_open</i>
           <input id="user-repeat" name="user-repeat" type="password" class="validate">
           <label for="user-repeat">Repeat</label>
-          <span class="error-message red-text" id="error-user-repeat"></span>  <!-- Error span -->
+          <span class="error-message red-text" id="error-user-repeat"></span>
         </div>
       </div>
 

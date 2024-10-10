@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 public class TokenDao {
     private final Connection connection;
     private final Logger logger;
-    private static final long TOKEN_LIFETIME = 1000 * 60 * 5;
+    private static final long TOKEN_LIFETIME = 1000 * 60 * 60 * 3;
 
     @Inject
     public TokenDao( Connection connection, Logger logger ) {
