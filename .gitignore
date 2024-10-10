@@ -37,9 +37,5 @@ build/
 ### Mac OS ###
 .DS_Store
 
-*.png
-*.jpg
-*.jpeg
-*.gif
 
 *.log
