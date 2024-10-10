@@ -31,7 +31,7 @@ public class CategoryServlet extends RestServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        super.sendRest( 200, categoryDao.all() );
+        super.sendRest( 200,600, categoryDao.all() );
     }
 
     @Override
@@ -65,7 +65,7 @@ public class CategoryServlet extends RestServlet {
             return;
         }
 
-        super.sendRest( 200,
+        super.sendRest( 200, 600,
                 categoryDao.add(
                         new ShopCategoryFormModel()
                                 .setSlug( slug )

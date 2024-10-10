@@ -24,6 +24,13 @@ public class RestServlet  extends HttpServlet {
         super.service(req, resp);
     }
 
+    protected void sendRest(int statusCode, int maxAge, Object data) throws IOException {
+        restResponse
+                .setStatus( statusCode )
+                .setData( data );
+        sendRest(maxAge);
+    }
+
     protected void sendRest(int statusCode, Object data) throws IOException {
         restResponse
                 .setStatus( statusCode )
