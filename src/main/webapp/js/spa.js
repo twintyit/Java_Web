@@ -230,6 +230,7 @@ function Category({id}) {
     });
 
     return <div >
+        <CategoriesList mode="ribbon"></CategoriesList>
         {products && <div>
             Category: {id}<br/>
             <b onClick={() => dispatch({type: 'navigate', payload: 'home'})}>До Крамниці</b>
@@ -300,24 +301,32 @@ function Home() {
         {state.auth.role.name === "admin" &&
             <button className="btn" onClick={() => dispatch( { type: 'navigate', payload: 'shop' } )}>До Адмінки</button>
         }
-        <CategoriesList />
+        <CategoriesList mode="table" />
     </React.Fragment>;
 }
 
-function CategoriesList() {
-    const {state, dispatch} = React.useContext(StateContext);
-    return <div>
-        {state.shop.categories.map(c =>
-            <div key={c.id}
-                 className="shop-category"
-                 onClick={() => dispatch({type: 'navigate', payload: 'category/' + (c.slug || c.id)})}>
-                <b>{c.name}</b>
-                <picture>
-                    <img src={"file/" + c.imageUrl} alt="grp"/>
-                </picture>
-                <p>{c.description}</p>
-            </div>)}
-    </div>;
+function CategoriesList({ mode }) {
+    const { state, dispatch } = React.useContext(StateContext);
+
+    const isTableMode = mode === "table";
+
+    return (
+        <div className={isTableMode ? "table-view" : "ribbon-view"}>
+            {state.shop.categories.map(c => (
+                <div
+                    key={c.id}
+                    className={isTableMode ? "shop-category-table" : "shop-category-ribbon"}
+                    onClick={() => dispatch({ type: 'navigate', payload: 'category/' + (c.slug || c.id) })}
+                >
+                    <b>{c.name}</b>
+                    <picture>
+                        <img src={"file/" + c.imageUrl} alt="grp" />
+                    </picture>
+                    <p>{c.description}</p>
+                </div>
+            ))}
+        </div>
+    );
 }
 
 function Shop() {
