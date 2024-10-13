@@ -7,6 +7,7 @@ import itstep.learning.dal.dao.shop.ProductDao;
 import itstep.learning.dal.dto.shop.Category;
 import itstep.learning.dal.dto.shop.Product;
 import itstep.learning.rest.*;
+import itstep.learning.services.cache.LocalConfigService;
 import itstep.learning.services.files.FileService;
 import itstep.learning.services.formparse.FormParseResult;
 import itstep.learning.services.formparse.FormParseService;
@@ -24,13 +25,15 @@ public class ProductServlet  extends RestServlet {
     private final FileService fileService;
     private final ProductDao productDao;
     private final CategoryDao categoryDao;
+    private final LocalConfigService configService;
 
     @Inject
-    public ProductServlet( FormParseService formParseService, FileService fileService, ProductDao productDao, CategoryDao categoryDao) {
+    public ProductServlet(FormParseService formParseService, FileService fileService, ProductDao productDao, CategoryDao categoryDao, LocalConfigService configService) {
         this.formParseService = formParseService;
         this.fileService = fileService;
         this.productDao = productDao;
         this.categoryDao = categoryDao;
+        this.configService = configService;
     }
 
     @Override
@@ -103,7 +106,7 @@ public class ProductServlet  extends RestServlet {
                 super.sendRest( 500, "Server Error" );
             }
             else {
-                super.sendRest( 200, product );
+                super.sendRest( 200, configService.getMaxAgeForProduct(), product );
             }
         }
         catch( Exception ex ) {

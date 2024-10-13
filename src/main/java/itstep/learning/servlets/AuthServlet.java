@@ -64,7 +64,9 @@ public class AuthServlet  extends RestServlet {
         Role role = userDao.getRoleById(user.getId());
 
         UserAuthResponse response = new UserAuthResponse(token, role);
-        super.sendRest(200, response);
+        int ageMax = (int)(token.getExp().getTime() / 1000) - (int)(token.getIat().getTime() / 1000);
+
+        super.sendRest(200,ageMax, response);
     }
 
 }

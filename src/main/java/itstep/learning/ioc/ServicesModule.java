@@ -2,6 +2,8 @@ package itstep.learning.ioc;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
+import itstep.learning.services.cache.ConfigService;
+import itstep.learning.services.cache.LocalConfigService;
 import itstep.learning.services.files.FileService;
 import itstep.learning.services.files.LocalFileService;
 import itstep.learning.services.formparse.FormParseService;
@@ -34,5 +36,6 @@ public class ServicesModule  extends AbstractModule {
         bind(StringReader.class).toInstance( stringReader);
         bind(FileService.class).to( LocalFileService.class );
         bind(RestService.class).to(SendRestService.class);
+        bind(ConfigService.class).to(LocalConfigService.class);
     }
 }

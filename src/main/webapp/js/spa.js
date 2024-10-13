@@ -1,11 +1,24 @@
 ﻿const env = {
-    apiHost: "http://localhost:8081/JavaWebPv221_war_exploded",
+    apiHost: "http://localhost:8080/JavaWebPv221_war_exploded",
 };
 
 function request(url, params){
     if(url.startsWith('/') ){
         url = env.apiHost + url;
     }
+    // if( typeof params.headers === "undefined"){
+    //     params = {
+    //         ...params,
+    //         headers: {
+    //             Authorization: `Bearer ${params.headers.Authorization}`
+    //         }
+    //     }
+    // }
+    // else if ( typeof params.headers.Authorization === "undefined" ){
+    //
+    // }
+
+
     return new Promise((resolve, reject) => {
         fetch( url, params )
             .then(r=>r.json())
@@ -229,6 +242,25 @@ function Category({id}) {
             });
     });
 
+    const addCart = React.useCallback((id)=>{
+        console.log(id);
+        const userId = state.auth.token.userId;
+        request("/shop/cart", {
+            method: "POST",
+            headers: {
+                Authorization: `Bearer ${state.auth.token.tokenId}`,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId,
+                productId: id,
+                cnt: "abc"
+            })
+        })
+            .then(console.log)
+            .catch(console.log);
+    })
+
     return <div >
         <CategoriesList mode="ribbon"></CategoriesList>
         {products && <div>
@@ -243,7 +275,21 @@ function Category({id}) {
                     <picture>
                         <img src={"file/" + p.imageUrl} alt="prod"/>
                     </picture>
-                    <p><strong>{p.price}</strong> <small>{p.description}</small></p>
+                    <div className="row" >
+                        <div className="col s9">
+                            <strong>{p.price} грн</strong>&emsp;
+                            <small>{p.description}</small>
+                        </div>
+                        <div className="col s3">
+                            <a className="btn-floating cart-fab waves-effect waves-light red" onClick={
+                                (e) => {
+                                    e.stopPropagation();
+                                    addCart(p.id)
+                                }
+                            }><i
+                                className="material-icons">shopping_bag</i></a>
+                        </div>
+                    </div>
                 </div>)}
             <br/>
             {state.auth.token && state.auth.role.name === "admin" &&
@@ -316,11 +362,11 @@ function CategoriesList({ mode }) {
                 <div
                     key={c.id}
                     className={isTableMode ? "shop-category-table" : "shop-category-ribbon"}
-                    onClick={() => dispatch({ type: 'navigate', payload: 'category/' + (c.slug || c.id) })}
+                    onClick={() => dispatch({type: 'navigate', payload: 'category/' + (c.slug || c.id)})}
                 >
                     <b>{c.name}</b>
                     <picture>
-                        <img src={"file/" + c.imageUrl} alt="grp" />
+                        <img src={"file/" + c.imageUrl} alt="grp"/>
                     </picture>
                     <p>{c.description}</p>
                 </div>

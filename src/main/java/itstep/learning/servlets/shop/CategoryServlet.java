@@ -5,6 +5,8 @@ import com.google.inject.Singleton;
 import itstep.learning.dal.dao.shop.CategoryDao;
 import itstep.learning.models.form.ShopCategoryFormModel;
 import itstep.learning.rest.RestServlet;
+import itstep.learning.services.cache.ConfigService;
+import itstep.learning.services.cache.LocalConfigService;
 import itstep.learning.services.files.FileService;
 import itstep.learning.services.formparse.FormParseResult;
 import itstep.learning.services.formparse.FormParseService;
@@ -21,17 +23,20 @@ public class CategoryServlet extends RestServlet {
     private final FormParseService formParseService;
     private final FileService fileService;
     private final CategoryDao categoryDao;
+    private final LocalConfigService configService;
 
     @Inject
-    public CategoryServlet( FormParseService formParseService, FileService fileService, CategoryDao categoryDao) {
+    public CategoryServlet(FormParseService formParseService, FileService fileService, CategoryDao categoryDao, LocalConfigService configService) {
         this.formParseService = formParseService;
         this.fileService = fileService;
         this.categoryDao = categoryDao;
+        this.configService = configService;
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-        super.sendRest( 200,600, categoryDao.all() );
+
+        super.sendRest( 200, configService.getMaxAgeForCategory(), categoryDao.all() );
     }
 
     @Override
@@ -65,7 +70,9 @@ public class CategoryServlet extends RestServlet {
             return;
         }
 
-        super.sendRest( 200, 600,
+        int maxAge = configService.getMaxAgeForCategory();
+
+        super.sendRest( 200, maxAge,
                 categoryDao.add(
                         new ShopCategoryFormModel()
                                 .setSlug( slug )

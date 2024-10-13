@@ -6,6 +6,7 @@ import com.google.inject.name.Named;
 import itstep.learning.dal.dao.RoleDao;
 import itstep.learning.dal.dao.TokenDao;
 import itstep.learning.dal.dao.UserDao;
+import itstep.learning.dal.dao.shop.CartDao;
 import itstep.learning.dal.dao.shop.CategoryDao;
 import itstep.learning.dal.dao.shop.ProductDao;
 import itstep.learning.services.hash.HashService;
@@ -24,14 +25,16 @@ public class HomeServlet extends HttpServlet {
     private final CategoryDao categoryDao;
     private final RoleDao roleDao;
     private final ProductDao productDao;
+    private final CartDao cartDao;
 
     @Inject
-    public HomeServlet(UserDao userDao, TokenDao tokenDao, CategoryDao categoryDao, RoleDao roleDao, ProductDao productDao) {
+    public HomeServlet(UserDao userDao, TokenDao tokenDao, CategoryDao categoryDao, RoleDao roleDao, ProductDao productDao, CartDao cartDao) {
         this.userDao = userDao;
         this.tokenDao = tokenDao;
         this.categoryDao = categoryDao;
         this.roleDao = roleDao;
         this.productDao = productDao;
+        this.cartDao = cartDao;
     }
 
     @Override
@@ -49,7 +52,8 @@ public class HomeServlet extends HttpServlet {
                         tokenDao.installTables() &&
                         categoryDao.installTables() &&
                         roleDao.installTables() &&
-                        productDao.installTables()
+                        productDao.installTables() &&
+                        cartDao.installTables()
                         ? "Tables OK" : "Tables Fail");
 
 

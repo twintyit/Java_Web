@@ -112,7 +112,7 @@ public class CategoryDao {
                         "image_url      VARCHAR(512)  NOT NULL," +
                         "description    TEXT              NULL," +
                         "delete_dt      DATETIME          NULL," +
-                        "category_slug  VARCHAR(64)       NULL" +
+                        "category_slug  VARCHAR(64)       NULL," +
                         "UNIQUE (category_slug)"+
                         ") ENGINE = InnoDB, DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci";
 

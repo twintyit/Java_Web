@@ -165,3 +165,17 @@ body{
     max-height: 90%;
     object-fit: contain;
 }
+
+.cart-fab {
+    width: 3vw !important;
+    height: 3vw !important;
+}
+
+.cart-fab i{
+    width: 2vw !important;
+    height: 2vw !important;
+    display: block;
+    margin: auto;
+    font-size: 2vw !important;
+    line-height: 3vw !important;
+}

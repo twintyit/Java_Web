@@ -30,7 +30,7 @@ public class WebModule extends ServletModule {
         serve("/role"        ).with( RoleServlet.class       );
 
 
-
+        serve( "/shop/cart"     ).with( CartServlet.class );
         serve( "/shop/category" ).with( CategoryServlet.class );
         serve( "/shop/product"  ).with( ProductServlet.class  );
 
