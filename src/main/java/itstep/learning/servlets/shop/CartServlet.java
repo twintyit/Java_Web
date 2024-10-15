@@ -16,6 +16,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
 
@@ -125,4 +127,19 @@ public class CartServlet extends RestServlet {
             super.sendRest( 500, "See server log for details");
         }
     }
+
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        String userId = (String) req.getAttribute("Claim.Sid");
+        if(userId == null) {
+            super.sendRest(401, "Auth token required");
+            return;
+        }
+        Map<String, Object> params = new HashMap<String, Object>();
+        params.put("userId", userId);
+        super.restResponse.getMeta().setParams( params );
+
+        super.sendRest( 200, cartDao.getCart( userId ) );
+    }
 }
+

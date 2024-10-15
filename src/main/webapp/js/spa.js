@@ -43,7 +43,8 @@ const initialState = {
     page: "home",
     shop: {
         categories: [ ]
-    }
+    },
+    cart: [],
 };
 
 function reducer(state, action) {
@@ -55,6 +56,10 @@ function reducer(state, action) {
                     token: action.payload.token,
                     role: action.payload.role
                 }
+            };
+        case 'cart' :
+            return { ...state,
+                cart: action.payload,
             };
         case 'navigate' :
             // console.log("navigate " + action.payload);
@@ -102,12 +107,10 @@ function Spa() {
             }
         });
     } );
-
     const exitClick = React.useCallback( () => {
         window.sessionStorage.removeItem( "token221" );
         setAuth(false);
     });
-
     const resourceClick = React.useCallback( () => {
         const data = window.sessionStorage.getItem( "token221" );
         if( ! data ) {
@@ -124,8 +127,7 @@ function Spa() {
         });
 
     });
-
-    const checkToken = React.useCallback( () => {
+    const checkToken = React.useCallback( (forceAuth) => {
         let data =  JSON.parse(window.sessionStorage.getItem( "token221" ));
         if(data) {
             const token = data.token;
@@ -134,10 +136,9 @@ function Spa() {
                 exitClick();
             }
             else {
-                if(!isAuth) {
+                if(forceAuth) {
                     setAuth(true);
                     dispatch({ type: 'auth', payload: data });
-
                 }
             }
         }
@@ -152,13 +153,33 @@ function Spa() {
             dispatch( { type: 'navigate', payload: hash.substring(1) } );
         }
     } );
+    const loadCart = React.useCallback(() => {
+        request(`/shop/cart`, {
+            headers: {
+                'Authorization': 'Bearer ' + state.auth.token.tokenId
+            },
+        })
+            .then(data => dispatch({type: 'cart', payload: data}))
+            .catch(console.error);
+    });
+    const calculateTotalPrice = React.useCallback(()=>{
+        return state.cart.reduce( (total, item) => total + (item.product.price * item.quantity), 0);
+    })
 
     React.useEffect(() => {
+        if(state.auth.token != null){
+            loadCart();
+        }
+        else {
+            dispatch({type: 'cart', payload: []});
+        }
+    },[state.auth]);
+    React.useEffect(() => {
         hashChanged();
-        checkToken();
+        checkToken(true);
 
         window.addEventListener('hashchange', hashChanged);
-        const interval = setInterval(checkToken, 1000);
+        const interval = setInterval(()=>checkToken(false), 1000);
 
         if (state.shop.categories.length === 0) {
             fetch("shop/category")
@@ -178,7 +199,7 @@ function Spa() {
         dispatch( { type: 'navigate', payload: route } );
     });
 
-    return <StateContext.Provider value={ {state, dispatch} }>
+    return <StateContext.Provider value={ {state, dispatch, loadCart, calculateTotalPrice} }>
         <h1>SPA</h1>
         { !isAuth &&
             <div>
@@ -193,20 +214,23 @@ function Spa() {
             <button onClick={exitClick} className="btn indigo lighten-4">Вихід</button>
             <p>{resource}</p>
             <button className="btn" onClick={() => navigate('home')}>Home</button>
+            <button className="btn" onClick={() => navigate('cart')}>Cart({state.cart.reduce((cnt, c) => cnt + c.quantity, 0)}/{calculateTotalPrice()})</button>
             {state.auth.role.name === "admin" &&
                 <button className="btn" onClick={() => navigate('shop')}>Shop</button>
             }
-            { state.page === 'home' && <Home /> }
-            { state.page === 'shop' && <Shop /> }
-            { state.page.startsWith('category/') && <Category id={state.page.substring(9)} /> }
-            { state.page.startsWith('product/') && <Product id={state.page.substring(8)} /> }
+
+            {state.page === 'home' && <Home/>}
+            {state.page === 'shop' && <Shop/>}
+            {state.page === 'cart' && <Cart/>}
+            {state.page.startsWith('category/') && <Category id={state.page.substring(9)}/>}
+            {state.page.startsWith('product/') && <Product id={state.page.substring(8)}/>}
         </div>
     }
     </StateContext.Provider>;
 }
 
 function Category({id}) {
-    const {state, dispatch} = React.useContext(StateContext);
+    const {state, dispatch, loadCart} = React.useContext(StateContext);
     const [products, setProducts] = React.useState([]);
     const loadProducts = React.useCallback( () => {
         request(`/shop/product?categoryId=${id}`)
@@ -254,10 +278,10 @@ function Category({id}) {
             body: JSON.stringify({
                 userId,
                 productId: id,
-                cnt: "abc"
+                cnt: 3
             })
         })
-            .then(console.log)
+            .then(()=>loadCart())
             .catch(console.log);
     })
 
@@ -406,6 +430,94 @@ function Shop() {
     </React.Fragment>;
 }
 
- ReactDOM
+function Cart() {
+    const {state, loadCart, calculateTotalPrice} = React.useContext(StateContext);
+    const [total, setTotal] = React.useState(() => calculateTotalPrice());
+    const changeQuantity = React.useCallback((cartItem, action) => {
+        switch (action) {
+            case'inc':
+                console.log(cartItem, action);
+                loadCart();
+                break;
+            case'dec':
+                console.log(cartItem, action);
+                loadCart();
+                break;
+            case'del':
+                console.log(cartItem, action);
+                loadCart();
+                break;
+        }
+    });
+
+    React.useEffect(() => {
+        setTotal(calculateTotalPrice());
+    }, [state.cart])
+
+    return <div className="container">
+        <h3 className="center-align">Корзина</h3>
+        {state.cart.length === 0 ? (
+            <div className='center-align' style={{ padding: "10px" }}>
+                <img src='https://xl-static.rozetka.com.ua/assets/img/design/modal-cart-dummy.svg'></img>
+                <h4>Корзина пуста</h4>
+                <p>Но это никогда не поздно исправить :)</p>
+            </div>
+        ) : (
+            <div>
+                <table className="highlight responsive-table">
+                    <thead>
+                    <tr>
+                        <th>Изображение</th>
+                        <th>Название</th>
+                        <th>Цена (грн)</th>
+                        <th>Количество</th>
+                        <th>Действия</th>
+                        <th>Цена</th>
+
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {state.cart.map((c) => (
+                        <tr key={c.productId}>
+                            <td>
+                                <img src={"file/" + c.product.imageUrl} alt="prod" width={55}/>
+                            </td>
+                            <td>{c.product.name}</td>
+                            <td>{c.product.price}</td>
+                            <td>{c.quantity}</td>
+                            <td>
+                                <button className="btn" onClick={() => {
+                                    changeQuantity(c, "dec")
+                                }}>-
+                                </button>
+                                <span> {c.quantity} </span>
+                                <button className="btn" onClick={() => {
+                                    changeQuantity(c, "inc")
+                                }}>+
+                                </button>
+                                &emsp;
+                                <button className="btn red" onClick={() => {
+                                    changeQuantity(c, "del")
+                                }}>x
+                                </button>
+                            </td>
+                            <td>{c.product.price * c.quantity}</td>
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
+
+                <div className='cart-summary'>
+                    <h3>Итого: {total} ₴</h3>
+                    <button className='btn '>
+                        Оформить заказ
+                    </button>
+                </div>
+            </div>
+        )}
+    </div>
+}
+
+ReactDOM
     .createRoot(document.getElementById("spa-container"))
-     .render(<Spa />);
+    .render(<Spa/>);
