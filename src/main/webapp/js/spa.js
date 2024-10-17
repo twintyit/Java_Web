@@ -2,6 +2,38 @@
     apiHost: "http://localhost:8080/JavaWebPv221_war_exploded",
 };
 
+function confirmAction({ title, text, confirmButtonText, cancelButtonText, onConfirm, onCancel }) {
+    const swalWithBootstrapButtons = Swal.mixin({
+        customClass: {
+            confirmButton: "btn sweet-btn",
+            cancelButton: "btn sweet-btn red"
+        },
+        buttonsStyling: false
+    });
+
+    swalWithBootstrapButtons.fire({
+        title: title || "Are you sure?",
+        text: text || "You won't be able to revert this!",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: confirmButtonText || "Yes, delete it!",
+        cancelButtonText: cancelButtonText || "No, cancel!",
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Если пользователь подтвердил действие
+            if (onConfirm) {
+                onConfirm();
+            }
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+            // Если пользователь отменил действие
+            if (onCancel) {
+                onCancel();
+            }
+        }
+    });
+}
+
 function request(url, params){
     if(url.startsWith('/') ){
         url = env.apiHost + url;
@@ -165,6 +197,8 @@ function Spa() {
     const calculateTotalPrice = React.useCallback(()=>{
         return state.cart.reduce( (total, item) => total + (item.product.price * item.quantity), 0);
     })
+
+
 
     React.useEffect(() => {
         if(state.auth.token != null){
@@ -435,20 +469,64 @@ function Cart() {
     const [total, setTotal] = React.useState(() => calculateTotalPrice());
     const changeQuantity = React.useCallback((cartItem, action) => {
         switch (action) {
-            case'inc':
-                console.log(cartItem, action);
-                loadCart();
-                break;
-            case'dec':
-                console.log(cartItem, action);
-                loadCart();
-                break;
-            case'del':
-                console.log(cartItem, action);
-                loadCart();
-                break;
+            case'inc': updateCart(cartItem, 1); break;
+            case'dec': updateCart(cartItem, -1); break;
+            case'del': updateCart(cartItem, -cartItem.quantity); break;
         }
     });
+    const updateCart = React.useCallback((cartItem, delta) => {
+        if(Number(cartItem.quantity) + Number(delta) === 0
+            && ! confirm(`Удалить из корзины? '${ cartItem.product.name}'?`)){
+                return;
+        }
+        request(`/shop/cart`, {
+            method: 'PUT',
+            headers: {
+                Authorization: 'Bearer ' + state.auth.token.tokenId,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                cartId: cartItem.cartId,
+                productId: cartItem.productId,
+                delta: delta
+            })
+        }).then(()=>loadCart())
+            .catch(console.log);
+    });
+
+    const buyClick = React.useCallback(()=>{
+        if(confirm( `Подтверждаете покупку на ${total}  грн?`)) {
+            request(`/shop/cart?cart-id=${state.cart[0].cartId}&is-cancelled=false`, {
+                method: 'PATCH',
+                headers: {
+                    Authorization: 'Bearer ' + state.auth.token.tokenId,
+                    'Content-Type': 'application/json'
+                }
+            }).then(()=>loadCart())
+                .catch(console.log);
+        }
+    });
+
+    const cleanCart = React.useCallback(()=> {
+        confirmAction({
+            title: "Очистить корзину?",
+            text: "Вы не сможете отменить это действие.",
+            confirmButtonText: "Да",
+            cancelButtonText: "Нет",
+            onConfirm: () => {
+                request(`/shop/cart?cart-id=${state.cart[0].cartId}&is-cancelled=true`, {
+                    method: 'PATCH',
+                    headers: {
+                        Authorization: 'Bearer ' + state.auth.token.tokenId,
+                        'Content-Type': 'application/json'
+                    }
+                }).then(() => loadCart())
+                    .catch(console.log);
+            },
+            onCancel: () => {
+            }
+        });
+    })
 
     React.useEffect(() => {
         setTotal(calculateTotalPrice());
@@ -509,9 +587,13 @@ function Cart() {
 
                 <div className='cart-summary'>
                     <h3>Итого: {total} ₴</h3>
-                    <button className='btn '>
+                    <button className='btn red' onClick={cleanCart}>
+                        Очистить корзину
+                    </button>
+                    <button className='btn' onClick={buyClick}>
                         Оформить заказ
                     </button>
+
                 </div>
             </div>
         )}

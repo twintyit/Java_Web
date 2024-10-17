@@ -194,3 +194,7 @@ body{
     justify-content: center;
     text-align: center;
 }
+
+.sweet-btn{
+    padding: 0 10px !important;
+}

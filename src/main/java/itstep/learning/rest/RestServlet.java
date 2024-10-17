@@ -13,7 +13,7 @@ public class RestServlet  extends HttpServlet {
     protected final static Gson gson = new GsonBuilder().serializeNulls().create();
 
     protected RestResponse restResponse;
-    private HttpServletResponse resp;
+    protected HttpServletResponse resp;
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {

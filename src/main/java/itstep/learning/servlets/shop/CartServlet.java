@@ -15,6 +15,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -45,7 +46,13 @@ public class CartServlet extends RestServlet {
                         .setName("Shop Cart API")
                         .setAcceptMethods( new String[] {"GET", "POST", "PUT", "DELETE"} )
         );
-        super.service(req, resp);
+        if(req.getMethod().equals("PATCH")){
+            super.resp = resp;
+            this.doPatch(req, resp);
+        }
+        else{
+            super.service(req, resp);
+        }
     }
 
     @Override
@@ -57,34 +64,14 @@ public class CartServlet extends RestServlet {
             return;
         }
 
-        if ( ! req.getContentType().startsWith( "application/json" ) ) {
-            super.sendRest( 415, "'application/json' expected" );
+        JsonObject json;
+        try { json = parseBodyAsObject(req); }
+        catch (ParseException ex){
+            super.sendRest(ex.getErrorOffset(), ex.getMessage());
             return;
         }
 
-        String jsonString;
-
-        try {
-            jsonString = stringReader.read(req.getInputStream());
-        }
-        catch ( IOException e ) {
-            logger.warning( e.getMessage() );
-            super.sendRest( 400, "JSON could not be extracted" );
-            return;
-        }
-        JsonElement json;
-        try {
-            json = gson.fromJson( jsonString , JsonElement.class);
-        }
-        catch ( JsonSyntaxException e ) {
-            super.sendRest( 400, "JSON could not be parsed" );
-            return;
-        }
-        if( ! json.isJsonObject() ) {
-            super.sendRest(422, "JSON root must be an object");
-            return;
-        }
-        JsonElement element = json.getAsJsonObject().get( "userId" );
+        JsonElement element = json.get( "userId" );
         if(element == null){
             super.sendRest(422, "JSON must have 'userId' field");
             return;
@@ -95,7 +82,7 @@ public class CartServlet extends RestServlet {
             return;
         }
 
-        element = json.getAsJsonObject().get( "cnt" );
+        element = json.get( "cnt" );
         int cnt = 1;
         if(element != null) {
             try {
@@ -121,7 +108,7 @@ public class CartServlet extends RestServlet {
             return;
         }
         if(cartDao.add(UUID.fromString( userId), cartProductId, cnt)){
-            super.sendRest( 201, jsonString );
+            super.sendRest( 201, cartProductId );
         }
         else {
             super.sendRest( 500, "See server log for details");
@@ -140,6 +127,103 @@ public class CartServlet extends RestServlet {
         super.restResponse.getMeta().setParams( params );
 
         super.sendRest( 200, cartDao.getCart( userId ) );
+    }
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        JsonObject json;
+        try { json = parseBodyAsObject(req); }
+        catch (ParseException ex){
+            super.sendRest(ex.getErrorOffset(), ex.getMessage());
+            return;
+        }
+
+        JsonElement element = json.get( "cartId" );
+        if(element == null){
+            super.sendRest(422, "JSON must have 'cartId' field");
+            return;
+        }
+        String str = element.getAsString();
+        UUID cartId;
+        try{ cartId = UUID.fromString( str ); }
+        catch ( IllegalArgumentException ignored ) {
+            super.sendRest(422, "'cartId' field must be a valid UUID");
+            return;
+        }
+
+        element = json.get( "productId" );
+        if(element == null){
+            super.sendRest(422, "JSON must have 'productId' field");
+            return;
+        }
+        str = element.getAsString();
+        UUID productId;
+        try{ productId = UUID.fromString( str ); }
+        catch ( IllegalArgumentException ignored ) {
+            super.sendRest(422, "'productId' field must be a valid UUID");
+            return;
+        }
+
+        element = json.get( "delta" );
+        if(element == null){
+            super.sendRest(422, "JSON must have 'delta' field");
+            return;
+        }
+        int delta = element.getAsInt();
+        try {
+            if (cartDao.update(cartId, productId, delta)) {
+                super.sendRest(200, "Updated");
+            } else {
+                super.sendRest(409, "Update failed");
+            }
+        }
+        catch (Exception ignored){
+            super.sendRest(500, "See server log for details");
+        }
+    }
+
+    protected void doPatch(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
+        UUID cartId;
+        boolean isCancelled;
+        try{
+            cartId = UUID.fromString( req.getParameter("cart-id") );
+            isCancelled =  Boolean.parseBoolean( req.getParameter("is-cancelled") );
+        }
+        catch ( IllegalArgumentException ignored ) {
+            super.sendRest(500, "'cart-id' field must be a valid UUID");
+            return;
+        }
+        super.sendRest( 202, cartDao.close( cartId, isCancelled ) );
+    }
+
+    private JsonObject parseBodyAsObject(HttpServletRequest req) throws ParseException {
+        JsonElement json = parseBody( req );
+        if( ! json.isJsonObject() ) {
+           throw  new ParseException("JSON root must be an object", 422);
+        }
+        return json.getAsJsonObject();
+    }
+
+    private JsonElement parseBody(HttpServletRequest req) throws ParseException {
+        if ( ! req.getContentType().startsWith( "application/json" ) ) {
+            throw new ParseException( "'application/json' expected", 415 );
+        }
+        String jsonString;
+        try {
+            jsonString = stringReader.read(req.getInputStream());
+        }
+        catch ( IOException e ) {
+            logger.warning( e.getMessage() );
+            throw new ParseException( "JSON could not be extracted",400 );
+        }
+        JsonElement json;
+        try {
+            json = gson.fromJson( jsonString , JsonElement.class);
+        }
+        catch ( JsonSyntaxException e ) {
+            throw new ParseException("JSON could not be parsed",400);
+        }
+        return json;
     }
 }
 
