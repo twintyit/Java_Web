@@ -181,18 +181,30 @@ public class CartDao {
         }
     }
 
-    public List<CartItem> getCart(String userId ) {
-        UUID uuid;
-        try { uuid = UUID.fromString( userId ); }
-        catch( IllegalArgumentException ex ) { return null; }
-        String sql = "SELECT * " +
-                        "FROM carts c " +
-                        "    JOIN cart_items ci on c.cart_id = ci.cart_id " +
-                        "    JOIN products p ON ci.product_id = p.product_id " +
-                        "WHERE c.user_id = ? " +
-                        "    AND c.close_dt is NULL " +
-                        "    AND c.is_cancelled = 0 ";
+    public List<CartItem> getCartByTmpId(String tmpId ) {
+        String sql = "SELECT * FROM carts c " +
+                "JOIN cart_items ci ON c.cart_id = ci.cart_id " +
+                "JOIN products p ON ci.product_id = p.product_id " +
+                "LEFT JOIN users u ON c.user_id = u.id " +
+                "WHERE u.id IS NULL and c.user_id = ? ";
+        return getCartItems(sql, tmpId);
+    }
 
+    public List<CartItem> getCart(String userId ) {
+        String sql = "SELECT * " +
+                "FROM carts c " +
+                "    JOIN cart_items ci on c.cart_id = ci.cart_id " +
+                "    JOIN products p ON ci.product_id = p.product_id " +
+                "WHERE c.user_id = ? " +
+                "    AND c.close_dt is NULL " +
+                "    AND c.is_cancelled = 0 ";
+        return getCartItems(sql, userId);
+    }
+
+    private  List<CartItem> getCartItems( String sql, String userId ) {
+        UUID uuid;
+        try { uuid = UUID.fromString( userId.trim() ); }
+        catch( IllegalArgumentException ex ) { return null; }
         List<CartItem> cartItems = new ArrayList<>();
         try(PreparedStatement prep = connection.prepareStatement( sql ) ) {
             prep.setString(1, uuid.toString() );
@@ -200,7 +212,6 @@ public class CartDao {
             cartItems = new ArrayList<>();
             while( rs.next() ) {
                 cartItems.add(new CartItem( rs) );
-
             }
         }
         catch( SQLException ex ) {
@@ -208,6 +219,4 @@ public class CartDao {
         }
         return cartItems;
     }
-
-
 }

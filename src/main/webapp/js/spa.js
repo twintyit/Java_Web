@@ -1,6 +1,14 @@
-﻿const env = {
+﻿function uuidv4() {
+    return "10000000-1000-4000-8000-100000000000".replace(/[018]/g, c =>
+        (+c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> +c / 4).toString(16)
+    );
+}
+
+const env = {
     apiHost: "http://localhost:8080/JavaWebPv221_war_exploded",
 };
+
+const StateContext = React.createContext(null);
 
 function confirmAction({ title, text, confirmButtonText, cancelButtonText, onConfirm, onCancel }) {
     const swalWithBootstrapButtons = Swal.mixin({
@@ -34,43 +42,11 @@ function confirmAction({ title, text, confirmButtonText, cancelButtonText, onCon
     });
 }
 
-function request(url, params){
-    if(url.startsWith('/') ){
-        url = env.apiHost + url;
-    }
-    // if( typeof params.headers === "undefined"){
-    //     params = {
-    //         ...params,
-    //         headers: {
-    //             Authorization: `Bearer ${params.headers.Authorization}`
-    //         }
-    //     }
-    // }
-    // else if ( typeof params.headers.Authorization === "undefined" ){
-    //
-    // }
-
-
-    return new Promise((resolve, reject) => {
-        fetch( url, params )
-            .then(r=>r.json())
-            .then(j =>{
-                if (j.status.isSuccessful ) {
-                    resolve(j.data);
-                }
-                else {
-                    reject(j.data);
-                }
-            })
-    })
-
-
-}
-
 const initialState = {
     auth: {
         token: null,
-        role: null
+        role: null,
+        tmpId: null,
     },
     page: "home",
     shop: {
@@ -82,11 +58,21 @@ const initialState = {
 function reducer(state, action) {
     switch( action.type ) {
         case 'auth' :
+            window.sessionStorage.setItem("token221", JSON.stringify(action.payload));
+            window.localStorage.removeItem("tempId221");
             return { ...state,
                 auth: {
                     ...state.auth,
                     token: action.payload.token,
-                    role: action.payload.role
+                    role: action.payload.role,
+                    tmpId: null
+                }
+            };
+        case 'auth-tmp' :
+            return { ...state,
+                auth: {
+                    ...state.auth,
+                    tmpId: action.payload,
                 }
             };
         case 'cart' :
@@ -110,38 +96,11 @@ function reducer(state, action) {
     }
 }
 
-const StateContext = React.createContext(null);
-
 function Spa() {
     const [state, dispatch] = React.useReducer( reducer, initialState );
-    const [login, setLogin] = React.useState("");
-    const [password, setPassword] = React.useState("");
-    const [error, setError] = React.useState(false);
-    const [isAuth, setAuth] = React.useState(false);
     const [resource, setResource] = React.useState("");
-    const loginChange = React.useCallback( (e) => setLogin( e.target.value ) );
-    const passwordChange = React.useCallback( (e) => setPassword( e.target.value ) );
-
-    const authClick = React.useCallback( () => {
-        const credentials = btoa( login + ":" + password );
-        fetch("auth", {
-            method: 'GET',
-            headers: {
-                'Authorization': 'Basic ' + credentials
-            }
-        }).then(r => r.json()).then( j => {
-            if( j.status.isSuccessful) {
-                window.sessionStorage.setItem( "token221", JSON.stringify( j.data ) );
-                setAuth(true);
-            }
-            else {
-                setError( j.data );
-            }
-        });
-    } );
     const exitClick = React.useCallback( () => {
         window.sessionStorage.removeItem( "token221" );
-        setAuth(false);
     });
     const resourceClick = React.useCallback( () => {
         const data = window.sessionStorage.getItem( "token221" );
@@ -169,13 +128,18 @@ function Spa() {
             }
             else {
                 if(forceAuth) {
-                    setAuth(true);
                     dispatch({ type: 'auth', payload: data });
                 }
             }
         }
         else {
-            setAuth(false);
+            let tmpId = window.localStorage.getItem( "tmpId221" );
+            if (tmpId != null ){
+                state.auth.tmpId = tmpId;
+                if(forceAuth) {
+                    dispatch({ type: 'auth-tmp', payload: tmpId });
+                }
+            }
         }
 
     });
@@ -186,22 +150,53 @@ function Spa() {
         }
     } );
     const loadCart = React.useCallback(() => {
-        request(`/shop/cart`, {
-            headers: {
-                'Authorization': 'Bearer ' + state.auth.token.tokenId
-            },
-        })
+        request(`/shop/cart`)
             .then(data => dispatch({type: 'cart', payload: data}))
             .catch(console.error);
+    });
+    const request = React.useCallback((url, params) => {
+        if(url.startsWith('/') ){
+            url = env.apiHost + url;
+        }
+        let bearer = null;
+        if(state.auth.token != null) {
+            bearer = state.auth.token.tokenId;
+        }
+        else if(state.auth.tmpId != null){
+            bearer = state.auth.tmpId;
+        }
+
+        if(bearer != null) {
+            if (typeof params === "undefined") {
+                params = {};
+            }
+            if (typeof params.headers === "undefined") {
+                params.headers = {
+                    Authorization: `Bearer `+ bearer
+                }
+            } else if (typeof params.headers.Authorization == "undefined") {
+                params.headers.Authorization = `Bearer `+ bearer;
+            }
+        }
+        return new Promise((resolve, reject) => {
+            fetch( url, params )
+                .then(r=>r.json())
+                .then(j =>{
+                    if (j.status.isSuccessful ) {
+                        resolve(j.data);
+                    }
+                    else {
+                        reject(j.data);
+                    }
+                })
+        })
     });
     const calculateTotalPrice = React.useCallback(()=>{
         return state.cart.reduce( (total, item) => total + (item.product.price * item.quantity), 0);
     })
 
-
-
     React.useEffect(() => {
-        if(state.auth.token != null){
+        if(state.auth.token != null ||state.auth.tmpId != null){
             loadCart();
         }
         else {
@@ -233,38 +228,76 @@ function Spa() {
         dispatch( { type: 'navigate', payload: route } );
     });
 
-    return <StateContext.Provider value={ {state, dispatch, loadCart, calculateTotalPrice} }>
+    return <StateContext.Provider value={ {state, dispatch, loadCart, calculateTotalPrice, request} }>
         <h1>SPA</h1>
-        { !isAuth &&
-            <div>
-                <b>Логін</b><input onChange={loginChange} /><br/>
-                <b>Пароль</b><input type="password"  onChange={passwordChange} /><br/>
-                <button onClick={authClick}>Одержати токен</button>
-                {error && <b>{error}</b>}
-            </div>
-        }{ isAuth &&
+
         <div>
             <button onClick={resourceClick} className="btn light-blue">Ресурс</button>
             <button onClick={exitClick} className="btn indigo lighten-4">Вихід</button>
             <p>{resource}</p>
             <button className="btn" onClick={() => navigate('home')}>Home</button>
-            <button className="btn" onClick={() => navigate('cart')}>Cart({state.cart.reduce((cnt, c) => cnt + c.quantity, 0)}/{calculateTotalPrice()})</button>
-            {state.auth.role.name === "admin" &&
-                <button className="btn" onClick={() => navigate('shop')}>Shop</button>
+            <button className="btn"
+                    onClick={() => navigate('cart')}>Cart({state.cart.reduce((cnt, c) => cnt + c.quantity, 0)}/{calculateTotalPrice()})
+            </button>
+            <button className="btn" onClick={() => navigate('shop')}>Shop</button>
+            {state.auth.token == null &&
+                <button className="btn" onClick={() => navigate('auth')}>Вход</button>
             }
 
+
+            {state.page === 'auth' && <AuthPage/>}
+            {state.page === 'cart' && <Cart/>}
             {state.page === 'home' && <Home/>}
             {state.page === 'shop' && <Shop/>}
-            {state.page === 'cart' && <Cart/>}
             {state.page.startsWith('category/') && <Category id={state.page.substring(9)}/>}
             {state.page.startsWith('product/') && <Product id={state.page.substring(8)}/>}
         </div>
-    }
+
     </StateContext.Provider>;
 }
 
+function AuthPage({backPage}) {
+    const {state, dispatch, request} = React.useContext(StateContext);
+    const [isAuth, setAuth] = React.useState(false);
+    const [login, setLogin] = React.useState("");
+    const [password, setPassword] = React.useState("");
+    const [error, setError] = React.useState(false);
+    const loginChange = React.useCallback( (e) => setLogin( e.target.value ) );
+    const passwordChange = React.useCallback( (e) => setPassword( e.target.value ) );
+
+    const authClick = React.useCallback( () => {
+        const credentials = btoa( login + ":" + password );
+        let endpoint = `/auth`;
+        if(state.auth.tmpId != null){
+            endpoint += `?tmp-id= ${state.auth.tmpId}`
+        }
+        request(endpoint, {
+            method: 'GET',
+            headers: {
+                'Authorization': 'Basic ' + credentials
+            }
+        })
+        .then( data => {
+            dispatch({type:"auth", payload: data});
+            setAuth(true);
+            window.localStorage.removeItem("tempId221");
+            if (backPage) {
+                dispatch({type: 'navigate', payload: backPage});
+            }
+        })
+        .catch(setError);
+    });
+
+    return <div>
+        <b>Логін</b><input onChange={loginChange}/><br/>
+        <b>Пароль</b><input type="password" onChange={passwordChange}/><br/>
+        <button onClick={authClick}>Одержати токен</button>
+        {error && <b>{error}</b>}
+    </div>
+}
+
 function Category({id}) {
-    const {state, dispatch, loadCart} = React.useContext(StateContext);
+    const {state, dispatch, loadCart, request} = React.useContext(StateContext);
     const [products, setProducts] = React.useState([]);
     const loadProducts = React.useCallback( () => {
         request(`/shop/product?categoryId=${id}`)
@@ -301,19 +334,29 @@ function Category({id}) {
     });
 
     const addCart = React.useCallback((id)=>{
-        console.log(id);
-        const userId = state.auth.token.userId;
+        let userId;
+        if(state.auth.token === null){
+            if(state.auth.tmpId == null){
+                state.auth.tmpId = uuidv4();
+                window.localStorage.setItem("tmpId221", state.auth.tmpId)
+            }
+            userId= state.auth.tmpId;
+        } else {
+            userId = state.auth.token.userId;
+        }
+        let body =
+            JSON.stringify({
+                userId: userId,
+                productId: id,
+                cnt: 3
+            });
+
         request("/shop/cart", {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${state.auth.token.tokenId}`,
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify({
-                userId,
-                productId: id,
-                cnt: 3
-            })
+            body: body
         })
             .then(()=>loadCart())
             .catch(console.log);
@@ -350,7 +393,7 @@ function Category({id}) {
                     </div>
                 </div>)}
             <br/>
-            {state.auth.token && state.auth.role.name === "admin" &&
+
                 <form id="add-product-form" onSubmit={addProduct} encType="multipart/form-data">
                     <hr/>
                     <input name="product-name" placeholder="Назва"/>
@@ -360,7 +403,7 @@ function Category({id}) {
                     <textarea name="product-description" placeholder="Опис"></textarea><br/>
                     <input type="hidden" name="product-category-id" value={id} />
                     <button type="submit">Додати</button>
-                </form>}
+                </form>
         </div>}
         {!products && <div>
             <h2>Группа товаров не существует</h2>
@@ -402,9 +445,9 @@ function Home() {
     }, [] );
     return <React.Fragment>
         <h2>Home</h2>
-        {state.auth.role.name === "admin" &&
+
             <button className="btn" onClick={() => dispatch( { type: 'navigate', payload: 'shop' } )}>До Адмінки</button>
-        }
+
         <CategoriesList mode="table" />
     </React.Fragment>;
 }
@@ -449,7 +492,6 @@ function Shop() {
     return <React.Fragment>
         <h2>Shop</h2>
         <hr/>
-        {state.auth.role.name === "admin" ? (
             <form onSubmit={addCategory} encType="multipart/form-data">
                 <input name="category-name" placeholder="Категорія"/>
                 <input name="category-slug" placeholder="Slug"/><br/>
@@ -457,15 +499,11 @@ function Shop() {
                 <textarea name="category-description" placeholder="Опис"></textarea><br/>
                 <button type="submit">Додати</button>
             </form>
-        ) : (
-            <div>Hello</div>
-        )
-        }
     </React.Fragment>;
 }
 
 function Cart() {
-    const {state, loadCart, calculateTotalPrice} = React.useContext(StateContext);
+    const {state, dispatch,loadCart, calculateTotalPrice, request} = React.useContext(StateContext);
     const [total, setTotal] = React.useState(() => calculateTotalPrice());
     const changeQuantity = React.useCallback((cartItem, action) => {
         switch (action) {
@@ -482,7 +520,6 @@ function Cart() {
         request(`/shop/cart`, {
             method: 'PUT',
             headers: {
-                Authorization: 'Bearer ' + state.auth.token.tokenId,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
@@ -495,15 +532,38 @@ function Cart() {
     });
 
     const buyClick = React.useCallback(()=>{
-        if(confirm( `Подтверждаете покупку на ${total}  грн?`)) {
-            request(`/shop/cart?cart-id=${state.cart[0].cartId}&is-cancelled=false`, {
-                method: 'PATCH',
-                headers: {
-                    Authorization: 'Bearer ' + state.auth.token.tokenId,
-                    'Content-Type': 'application/json'
+        if(state.auth.token == null){
+           confirmAction({
+                title: " Хотите войти в систему?",
+                text: "Вы покупаете в анонимном режиме. История покупок не будет сохранена, персональные скидки не учитываются.",
+                confirmButtonText: "Да",
+                cancelButtonText: "Нет",
+                onConfirm: () => {
+                    dispatch({type: 'navigate', payload: 'auth'});
+                    return;
+                },
+                onCancel: () => {
                 }
-            }).then(()=>loadCart())
-                .catch(console.log);
+            });
+        }
+        else {
+            confirmAction({
+                title: `Подтверждаете покупку на ${total} грн?`,
+                text: " ",
+                confirmButtonText: "Да",
+                cancelButtonText: "Нет",
+                onConfirm: () => {
+                    request(`/shop/cart?cart-id=${state.cart[0].cartId}&is-cancelled=false`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    }).then(() => loadCart())
+                        .catch(console.log);
+                },
+                onCancel: () => {
+                }
+            });
         }
     });
 
@@ -517,7 +577,6 @@ function Cart() {
                 request(`/shop/cart?cart-id=${state.cart[0].cartId}&is-cancelled=true`, {
                     method: 'PATCH',
                     headers: {
-                        Authorization: 'Bearer ' + state.auth.token.tokenId,
                         'Content-Type': 'application/json'
                     }
                 }).then(() => loadCart())

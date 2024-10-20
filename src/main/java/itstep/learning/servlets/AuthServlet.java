@@ -4,11 +4,14 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import itstep.learning.dal.dao.RoleDao;
 import itstep.learning.dal.dao.TokenDao;
 import itstep.learning.dal.dao.UserDao;
+import itstep.learning.dal.dao.shop.CartDao;
 import itstep.learning.dal.dto.Role;
 import itstep.learning.dal.dto.Token;
 import itstep.learning.dal.dto.User;
+import itstep.learning.dal.dto.shop.CartItem;
 import itstep.learning.models.rest.UserAuthResponse;
 import itstep.learning.rest.RestResponse;
 import itstep.learning.rest.RestServlet;
@@ -19,6 +22,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Base64;
+import java.util.List;
+import java.util.UUID;
 import java.util.logging.Logger;
 
 @Singleton
@@ -26,12 +31,14 @@ public class AuthServlet  extends RestServlet {
     private final Logger logger;
     private final UserDao userDao;
     private final TokenDao tokenDao;
+    private final CartDao cartDao;
 
     @Inject
-    public AuthServlet(Logger logger, UserDao userDao, TokenDao tokenDao) {
+    public AuthServlet(Logger logger, UserDao userDao, TokenDao tokenDao, CartDao cartDao) {
         this.logger = logger;
         this.userDao = userDao;
         this.tokenDao = tokenDao;
+        this.cartDao = cartDao;
     }
 
     @Override
@@ -60,6 +67,19 @@ public class AuthServlet  extends RestServlet {
             super.sendRest(422, "Invalid username or password" );
             return;
         }
+
+        String tmpId = req.getParameter("tmp-id");
+        logger.warning(tmpId);
+        try{
+            if(tmpId != null) {
+                logger.warning("ok");
+                List<CartItem> tempCart = cartDao.getCartByTmpId(tmpId);
+                tempCart.forEach( ci -> cartDao.add(user.getId(), ci.getProductId(), ci.getQuantity() ));
+            }
+        }catch (Exception ex) {
+            logger.warning(ex.getMessage());
+        }
+
         Token token = tokenDao.create(user);
         Role role = userDao.getRoleById(user.getId());
 
@@ -68,5 +88,6 @@ public class AuthServlet  extends RestServlet {
 
         super.sendRest(200,ageMax, response);
     }
+
 
 }
